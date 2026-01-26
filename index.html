@@ -10,31 +10,30 @@
 <style>
 :root{--bg1:#0f172a;--bg2:#1e293b;--card:#111827;--accent:#22d3ee;--text:#e5e7eb;--muted:#94a3b8;--input:#1f2937}
 body.light{--bg1:#e0f2fe;--bg2:#f8fafc;--card:#ffffff;--accent:#0284c7;--text:#0f172a;--muted:#64748b;--input:#e2e8f0}
-body{margin:0;font-family:system-ui;background:linear-gradient(135deg,var(--bg1),var(--bg2));color:var(--text);display:flex;justify-content:center;align-items:center;height:100vh;transition:background 0.3s}
-.card{width:95%;max-width:1100px;height:95vh;background:var(--card);border-radius:20px;display:flex;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4);transition:all 0.3s}
-.sidebar{width:260px;padding:15px;border-right:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px;transition:all 0.3s}
-.main{flex:1;display:flex;flex-direction:column;padding:14px;transition:all 0.3s}
-header{display:flex;justify-content:space-between;align-items:center;font-weight:bold;color:var(--accent);font-size:18px;margin-bottom:6px}
-#messages{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:10px;transition:all 0.3s}
-.msg{max-width:75%;padding:12px;border-radius:16px;font-size:14px;transition:all 0.2s}
+body{margin:0;font-family:system-ui;background:linear-gradient(135deg,var(--bg1),var(--bg2));color:var(--text);display:flex;justify-content:center;align-items:center;height:100vh;transition:.3s}
+.card{width:95%;max-width:1100px;height:95vh;background:var(--card);border-radius:20px;display:flex;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.sidebar{width:260px;padding:15px;border-right:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px}
+.main{flex:1;display:flex;flex-direction:column;padding:14px}
+header{display:flex;align-items:center;font-weight:bold;color:var(--accent);font-size:18px;margin-bottom:6px}
+#profileInfo{flex:1;text-align:center;font-size:16px;color:var(--text)}
+.themeBtn{background:transparent;border:2px solid var(--accent);color:var(--accent);padding:6px 10px;border-radius:10px;cursor:pointer}
+#messages{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:75%;padding:12px;border-radius:16px;font-size:14px}
 .me{background:var(--accent);color:#001018;align-self:flex-end}
 .other{background:var(--input)}
 .system{align-self:center;color:var(--muted);font-size:12px}
 .inputBar{display:flex;gap:8px;margin-top:8px}
 input,button{padding:12px;border-radius:14px;border:none;font-size:14px}
 input{flex:1;background:var(--input);color:var(--text)}
-button{background:var(--accent);font-weight:bold;cursor:pointer;transition:all 0.2s}
-button:hover{opacity:0.85}
+button{background:var(--accent);font-weight:bold;cursor:pointer}
 .authBox{margin:auto;width:320px;display:flex;flex-direction:column;gap:8px}
 .dropdown{position:absolute;background:var(--card);border-radius:10px;max-height:150px;overflow-y:auto;display:none;width:220px;z-index:5}
-.themeBtn{background:transparent;border:2px solid var(--accent);color:var(--accent)}
-.roomTag{font-size:12px;color:var(--muted)}
-.appName{font-weight:900;letter-spacing:1px}
+.dropdown div{padding:8px;border-bottom:1px solid rgba(255,255,255,.08);cursor:pointer}
+.dropdown div:hover{background:var(--accent);color:#001018}
 .userBar{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
-.userItem{cursor:pointer;padding:8px;border-radius:8px;background:var(--input);color:var(--text)}
+.userItem{cursor:pointer;padding:8px;border-radius:8px;background:var(--input)}
 .userItem:hover{background:var(--accent);color:#001018}
 .profilePage{display:none;flex-direction:column;gap:8px}
-@media(max-width:768px){body{align-items:stretch;height:100vh}.card{flex-direction:column;width:100%;height:100vh;border-radius:0}.sidebar{width:100%;flex-direction:row;overflow-x:auto;border-right:none;border-bottom:1px solid rgba(255,255,255,.08)}.main{padding:10px}}
 .adBanner{height:60px;background:linear-gradient(90deg,#0ea5e9,#22d3ee);color:#001018;font-weight:bold;display:flex;align-items:center;justify-content:center;border-radius:14px;margin-bottom:8px}
 </style>
 </head>
@@ -46,144 +45,171 @@ button:hover{opacity:0.85}
   <div class="userBar" id="userBar"></div>
 </div>
 <div class="main">
+
 <div id="authSection" class="authBox">
-<h2>🐦 Birdseye</h2>
-<input id="username" placeholder="Username (unique)">
-<input id="displayName" placeholder="Display Name">
+<h2>🐦 Birdseye Login</h2>
+<input id="username" placeholder="Username">
+<input id="displayName" placeholder="Display Name (only for register)">
 <input id="password" type="password" placeholder="Password">
 <button id="registerBtn">Register</button>
-<button id="loginBtnReal">Login</button>
+<button id="loginBtn">Login</button>
 </div>
+
 <div id="chatSection" style="display:none;flex:1;flex-direction:column">
-<header><span class="appName">🐦 BIRDSEYE</span><span id="profileInfo" style="text-align:center;flex:1"></span><span id="roomLabel" class="roomTag"></span><button class="themeBtn" id="themeToggle">☀️/🌙</button><button class="themeBtn" id="openProfile">Profile</button></header>
-<div class="adBanner">Your Ad Space • Birdseye</div>
+<header>
+<span>🐦 BIRDSEYE</span>
+<span id="profileInfo"></span>
+<button class="themeBtn" id="themeToggle">☀️/🌙</button>
+<button class="themeBtn" id="openProfile">Profile</button>
+</header>
+<div class="adBanner">Birdseye Chat</div>
 <div style="position:relative;margin-bottom:6px">
-  <input id="searchUser" placeholder="Search username or name..." autocomplete="off">
+  <input id="searchUser" placeholder="Search users...">
   <div id="userList" class="dropdown"></div>
 </div>
 <div id="messages"></div>
-<div class="inputBar"><input id="msgInput" placeholder="Type a message..."><button id="sendBtn">Send</button></div>
+<div class="inputBar"><input id="msgInput" placeholder="Type message"><button id="sendBtn">Send</button></div>
 </div>
+
 <div id="profilePage" class="profilePage">
 <h2>My Profile</h2>
 <p><b>Username:</b> <span id="profileUsername"></span></p>
 <p><b>Display Name:</b> <span id="profileDisplayName"></span></p>
 <button id="logoutBtn">Logout</button>
-<button id="backToChat">Back to Chat</button>
+<button id="backToChat">Back</button>
+</div>
+
 </div>
 </div>
-</div>
+
 <script>
 document.addEventListener("DOMContentLoaded",()=>{
-const firebaseConfig={apiKey:"AIzaSyAGaLzIipX0shzqU5kuGTzbCEu2BiQ-zFk",authDomain:"spymessege.firebaseapp.com",projectId:"spymessege",storageBucket:"spymessege.firebasestorage.app",messagingSenderId:"1025361505349",appId:"1:1025361505349:web:ca43f4bbb92a9719e3472c"};
+const firebaseConfig={apiKey:"AIzaSyAGaLzIipX0shzqU5kuGTzbCEu2BiQ-zFk",authDomain:"spymessege.firebaseapp.com",projectId:"spymessege"};
 firebase.initializeApp(firebaseConfig);
 const auth=firebase.auth(),db=firebase.firestore();
 const $=id=>document.getElementById(id);
-let currentUser=null,currentRoom="global",unsubscribe=null;
+let currentUser=null,currentRoom=null,unsubscribe=null;
 function fakeEmail(u){return u+"@birdseye.app"}
 
+$('themeToggle').onclick=()=>document.body.classList.toggle('light');
+
 $('registerBtn').onclick=async()=>{
+ try{
  const u=$('username').value.trim(),d=$('displayName').value.trim(),p=$('password').value;
  if(!u||!d||!p) return alert("Fill all fields");
- try{
-  const cred=await auth.createUserWithEmailAndPassword(fakeEmail(u),p);
-  await db.collection("users").doc(u).set({username:u,displayName:d,uid:cred.user.uid,created:firebase.firestore.FieldValue.serverTimestamp()});
-  alert("Account created!");
- }catch(e){alert("Register error: "+e.message)}
+ await auth.createUserWithEmailAndPassword(fakeEmail(u),p);
+ await db.collection("users").doc(u).set({username:u,displayName:d});
+ alert("Registered! Now login.");
+ }catch(e){alert(e.message)}
 };
 
-// Real login button functionality
-$('loginBtnReal').onclick=async()=>{
- const u=$('username').value.trim();
- const p=$('password').value;
- if(!u||!p) return alert("Fill username and password");
+$('loginBtn').onclick=async()=>{
  try{
-   await auth.signInWithEmailAndPassword(fakeEmail(u),p);
- } catch(e){
-   alert("Login failed: "+e.message);
- }
+ const u=$('username').value.trim(),p=$('password').value;
+ if(!u||!p) return alert("Enter username & password");
+ await auth.signInWithEmailAndPassword(fakeEmail(u),p);
+ }catch(e){alert(e.message)}
 };
 
-$('themeToggle').onclick=()=>document.body.classList.toggle('light');
+$('logoutBtn').onclick=()=>auth.signOut();
 $('sendBtn').onclick=sendMessage;
 $('globalRoomBtn').onclick=()=>openGlobal();
 $('openProfile').onclick=()=>{ $('chatSection').style.display='none'; $('profilePage').style.display='flex'; };
 $('backToChat').onclick=()=>{ $('profilePage').style.display='none'; $('chatSection').style.display='flex'; };
-$('logoutBtn').onclick=()=>{
-  auth.signOut().then(()=>{
-    currentUser=null;
-    $('chatSection').style.display='none';
-    $('profilePage').style.display='none';
-    $('authSection').style.display='flex';
-    $('sidebar').style.display='none';
-    $('messages').innerHTML='';
-    $('msgInput').value='';
-  });
-};
 
-auth.onAuthStateChanged(async user=>{
- if(user){
-  currentUser=user.email.split('@')[0];
-  $('authSection').style.display='none';
-  $('chatSection').style.display='flex';
-  $('sidebar').style.display='flex';
-  const doc=await db.collection('users').doc(currentUser).get();
-  const data=doc.data();
-  $('profileInfo').innerText=`@${data.username}`;
-  $('profileUsername').innerText=data.username;
-  $('profileDisplayName').innerText=data.displayName;
-  updateUserBar();
-  openGlobal();
- }else{
-  $('authSection').style.display='flex';
-  $('chatSection').style.display='none';
-  $('sidebar').style.display='none';
-  $('profilePage').style.display='none';
- }
-});
+function getRoomId(a,b){return [a,b].sort().join('_');}
+function openGlobal(){currentRoom='global';listenRoom();}
+function openPrivate(o){if(!currentUser) return; currentRoom=getRoomId(currentUser,o);listenRoom();addRoomToSidebar(o);} 
 
-async function updateUserBar(){
- const snap=await db.collection('users').get();
- const bar=$('userBar'); bar.innerHTML='';
- snap.forEach(doc=>{
-  if(doc.id!==currentUser){
-   const u=doc.data();
-   const div=document.createElement('div');
-   div.className='userItem';
-   div.textContent=`${u.displayName} (@${u.username})`;
-   div.onclick=()=>openPrivate(u.username);
-   bar.appendChild(div);
-  }
+function listenRoom(){
+ if(!currentRoom) return;
+ if(unsubscribe)unsubscribe();
+ $('messages').innerHTML='Loading...';
+ unsubscribe=db.collection('rooms').doc(currentRoom).collection('messages').orderBy('time')
+ .onSnapshot(s=>{
+   $('messages').innerHTML='';
+   if(s.empty){$('messages').innerHTML="<div class='system'>No messages</div>";return;}
+   s.forEach(d=>{
+     const m=d.data();
+     if(!m || !m.from) return;
+     const div=document.createElement('div');
+     div.className='msg '+(m.from===currentUser?'me':'other');
+     div.innerHTML=`<b>@${m.from}</b><br>${m.text||''}`;
+     $('messages').appendChild(div);
+   });
+   $('messages').scrollTop=$('messages').scrollHeight;
  });
 }
 
-function openGlobal(){currentRoom='global';$('roomLabel').innerText='🌍 Global Chat';ensureRoomExists('global');listenRoom();}
-function openPrivate(o){currentRoom=[currentUser,o].sort().join('_');$('roomLabel').innerText='Chat with @'+o;ensureRoomExists(currentRoom);listenRoom();}
-function ensureRoomExists(id){db.collection('rooms').doc(id).set({created:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});}
-
-function listenRoom(){if(unsubscribe)unsubscribe();$('messages').innerHTML='Loading...';unsubscribe=db.collection('rooms').doc(currentRoom).collection('messages').orderBy('created')
-.onSnapshot(s=>{$('messages').innerHTML='';if(s.empty)$('messages').innerHTML="<div class='system'>No messages yet</div>";s.forEach(d=>{const m=d.data();const div=document.createElement('div');div.className='msg '+(m.from===currentUser?'me':'other');div.innerHTML=`<b>@${m.from}</b><br>${m.text}`;$('messages').appendChild(div);});$('messages').scrollTop=$('messages').scrollHeight;},e=>$('messages').innerHTML="⚠️ "+e.message);
+function sendMessage(){
+ if(!currentUser||!currentRoom) return alert("No active chat");
+ const t=$('msgInput').value.trim();
+ if(!t) return;
+ db.collection('rooms').doc(currentRoom).collection('messages').add({text:t,from:currentUser,time:Date.now()});
+ $('msgInput').value='';
 }
 
-function sendMessage(){const t=$('msgInput').value.trim();if(!t)return;db.collection('rooms').doc(currentRoom).collection('messages').add({text:t,from:currentUser,created:firebase.firestore.FieldValue.serverTimestamp()}).catch(e=>alert(e.message));$('msgInput').value='';}
+function addRoomToSidebar(user){
+ const bar=$('userBar');
+ if([...bar.children].some(c=>c.dataset.user===user))return;
+ const div=document.createElement('div');
+ div.className='userItem';div.dataset.user=user;div.textContent='@'+user;
+ div.onclick=()=>openPrivate(user);
+ bar.appendChild(div);
+}
 
 $('searchUser').addEventListener('input',async()=>{
- const q=$('searchUser').value.trim().toLowerCase();
+ const q=$('searchUser').value.toLowerCase();
  if(!q){$('userList').style.display='none';return;}
  const snap=await db.collection('users').get();
  $('userList').innerHTML='';
  snap.forEach(doc=>{
-  if(doc.id===currentUser) return;
   const u=doc.data();
-  if(u.username.toLowerCase().includes(q)||u.displayName.toLowerCase().includes(q)){
-    const div=document.createElement('div');
-    div.textContent=u.username+" ("+u.displayName+")";
-    div.onclick=()=>{openPrivate(u.username);$('userList').style.display='none'};
-    $('userList').appendChild(div);
+  if(!u||!u.username||doc.id===currentUser) return;
+  if(u.username.toLowerCase().includes(q)||(u.displayName||'').toLowerCase().includes(q)){
+   const div=document.createElement('div');
+   div.textContent=`${u.displayName||u.username} (@${u.username})`;
+   div.onclick=()=>{openPrivate(u.username);$('userList').style.display='none'};
+   $('userList').appendChild(div);
   }
  });
  $('userList').style.display='block';
 });
+
+// 🔥 FIX: Proper null checks for auth state
+auth.onAuthStateChanged(async user=>{
+ if(user && user.email){
+   currentUser=user.email.split('@')[0];
+   $('authSection').style.display='none';
+   $('chatSection').style.display='flex';
+   $('sidebar').style.display='flex';
+   try{
+     const snap=await db.collection('users').doc(currentUser).get();
+     const d=snap.exists?snap.data():null;
+     if(d && d.username){
+       $('profileInfo').innerText='@'+d.username;
+       $('profileUsername').innerText=d.username;
+       $('profileDisplayName').innerText=d.displayName||'';
+     }else{
+       $('profileInfo').innerText='@'+currentUser;
+       $('profileUsername').innerText=currentUser;
+       $('profileDisplayName').innerText='';
+     }
+   }catch(e){console.error(e)}
+   openGlobal();
+ }else{
+   currentUser=null;
+   if(unsubscribe)unsubscribe();
+   $('authSection').style.display='flex';
+   $('chatSection').style.display='none';
+   $('sidebar').style.display='none';
+   $('profilePage').style.display='none';
+ }
+});
+
+// Basic runtime tests
+console.assert(typeof fakeEmail('test')==='string','fakeEmail failed');
+console.assert(getRoomId('a','b')==='a_b','room id sort failed');
 });
 </script>
 </body>
