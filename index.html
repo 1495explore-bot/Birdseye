@@ -145,11 +145,7 @@ function sendMessage(){
  if(!currentUser||!currentRoom) return alert("No active chat");
  const t=$('msgInput').value.trim();
  if(!t) return;
- db.collection('rooms').doc(currentRoom).collection('messages').add({
-   text:t,
-   from:currentUser,
-   time: firebase.firestore.FieldValue.serverTimestamp() // ✅ FIXED
- });
+ db.collection('rooms').doc(currentRoom).collection('messages').add({text:t,from:currentUser,time:Date.now()});
  $('msgInput').value='';
 }
 
@@ -162,29 +158,25 @@ function addRoomToSidebar(user){
  bar.appendChild(div);
 }
 
-// 🔥 IMPROVED USER SEARCH
 $('searchUser').addEventListener('input',async()=>{
- const q=$('searchUser').value.toLowerCase().trim();
+ const q=$('searchUser').value.toLowerCase();
  if(!q){$('userList').style.display='none';return;}
- const snap=await db.collection('users')
-     .orderBy('username')
-     .startAt(q)
-     .endAt(q+'\uf8ff')
-     .limit(10)
-     .get();
+ const snap=await db.collection('users').get();
  $('userList').innerHTML='';
  snap.forEach(doc=>{
   const u=doc.data();
-  if(u.username===currentUser) return;
-  const div=document.createElement('div');
-  div.textContent=`${u.displayName||u.username} (@${u.username})`;
-  div.onclick=()=>{openPrivate(u.username);$('userList').style.display='none'};
-  $('userList').appendChild(div);
+  if(!u||!u.username||doc.id===currentUser) return;
+  if(u.username.toLowerCase().includes(q)||(u.displayName||'').toLowerCase().includes(q)){
+   const div=document.createElement('div');
+   div.textContent=`${u.displayName||u.username} (@${u.username})`;
+   div.onclick=()=>{openPrivate(u.username);$('userList').style.display='none'};
+   $('userList').appendChild(div);
+  }
  });
  $('userList').style.display='block';
 });
 
-// AUTH STATE
+// 🔥 FIX: Proper null checks for auth state
 auth.onAuthStateChanged(async user=>{
  if(user && user.email){
    currentUser=user.email.split('@')[0];
@@ -198,6 +190,10 @@ auth.onAuthStateChanged(async user=>{
        $('profileInfo').innerText='@'+d.username;
        $('profileUsername').innerText=d.username;
        $('profileDisplayName').innerText=d.displayName||'';
+     }else{
+       $('profileInfo').innerText='@'+currentUser;
+       $('profileUsername').innerText=currentUser;
+       $('profileDisplayName').innerText='';
      }
    }catch(e){console.error(e)}
    openGlobal();
@@ -210,11 +206,11 @@ auth.onAuthStateChanged(async user=>{
    $('profilePage').style.display='none';
  }
 });
+
+// Basic runtime tests
+console.assert(typeof fakeEmail('test')==='string','fakeEmail failed');
+console.assert(getRoomId('a','b')==='a_b','room id sort failed');
 });
 </script>
 </body>
-</html> 
-
-
-
-
+</html>
