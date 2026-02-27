@@ -46,7 +46,7 @@ button{background:var(--accent);font-weight:bold;cursor:pointer}
 <button class="menu-btn" onclick="toggleSidebar()">☰</button>
 <div class="card">
 <div class="sidebar" id="sidebar" style="display:none">
-  <h3>Chats</h3>
+  <h3 style="margin:5px 0">Chats</h3>
   <div class="userItem" id="globalRoomBtn">🌍 Global</div>
   <div class="userBar" id="userBar"></div>
 </div>
@@ -95,7 +95,11 @@ firebase.initializeApp(firebaseConfig);
 const auth=firebase.auth(),db=firebase.firestore();
 const $=id=>document.getElementById(id);
 let currentUser=null,currentRoom=null,unsubscribe=null;
+
 function fakeEmail(u){return u+"@birdseye.app"}
+
+// This ensures UserA_UserB is the same ID for both people
+function getRoomId(a, b) { return a < b ? a + "_" + b : b + "_" + a; }
 
 $('themeToggle').onclick=()=>document.body.classList.toggle('light');
 
@@ -119,16 +123,22 @@ $('loginBtn').onclick=async()=>{
 
 $('logoutBtn').onclick=()=>auth.signOut();
 $('sendBtn').onclick=sendMessage;
-$('globalRoomBtn').onclick=()=>{ openGlobal(); $('sidebar').classList.remove('active'); };
+
+$('globalRoomBtn').onclick=()=>{
+  openGlobal();
+  $('sidebar').classList.remove('active');
+};
+
+// Profile Navigation logic preserved
 $('openProfile').onclick=()=>{ $('chatSection').style.display='none'; $('profilePage').style.display='flex'; };
 $('backToChat').onclick=()=>{ $('profilePage').style.display='none'; $('chatSection').style.display='flex'; };
 
-function getRoomId(a,b){return [a,b].sort().join('_');}
 function openGlobal(){currentRoom='global';listenRoom();}
 
 async function openPrivate(o){
-  if(!currentUser) return; 
+  if(!currentUser || currentUser === o) return; 
   currentRoom=getRoomId(currentUser,o);
+  // Important: Save the room participants so it appears for the other person
   await db.collection('rooms').doc(currentRoom).set({ participants: [currentUser, o] }, {merge: true});
   listenRoom();
   addRoomToSidebar(o);
@@ -138,7 +148,7 @@ async function openPrivate(o){
 function listenRoom(){
  if(!currentRoom) return;
  if(unsubscribe)unsubscribe();
- $('messages').innerHTML='Loading...';
+ $('messages').innerHTML='<div class="system">Loading...</div>';
  unsubscribe=db.collection('rooms').doc(currentRoom).collection('messages').orderBy('time')
  .onSnapshot(s=>{
    $('messages').innerHTML='';
@@ -181,7 +191,7 @@ $('searchUser').addEventListener('input',async()=>{
   if(u.username.toLowerCase().includes(q)){
    const div=document.createElement('div');
    div.textContent=`@${u.username}`;
-   div.onclick=()=>{openPrivate(u.username);$('userList').style.display='none'};
+   div.onclick=()=>{openPrivate(u.username);$('userList').style.display='none'; $('searchUser').value='';};
    $('userList').appendChild(div);
   }
  });
@@ -194,6 +204,7 @@ auth.onAuthStateChanged(async user=>{
    $('authSection').style.display='none';
    $('chatSection').style.display='flex';
    $('sidebar').style.display='flex';
+   
    const snap=await db.collection('users').doc(currentUser).get();
    if(snap.exists){
      const d=snap.data();
@@ -201,22 +212,28 @@ auth.onAuthStateChanged(async user=>{
      $('profileUsername').innerText=d.username;
      $('profileDisplayName').innerText=d.displayName||'';
    }
+   
+   // Sync sidebar rooms automatically based on database participants
    db.collection('rooms').where('participants', 'array-contains', currentUser)
      .onSnapshot(snap => {
         snap.forEach(doc => {
-            const other = doc.data().participants.find(p => p !== currentUser);
-            if(other) addRoomToSidebar(other);
+            const data = doc.data();
+            if(data.participants){
+              const other = data.participants.find(p => p !== currentUser);
+              if(other) addRoomToSidebar(other);
+            }
         });
      });
    openGlobal();
  }else{
-   // LOGOUT RESET: This hides everything and shows the login box
+   // Proper cleanup on logout
    currentUser=null;
    if(unsubscribe)unsubscribe();
    $('authSection').style.display='flex';
    $('chatSection').style.display='none';
    $('sidebar').style.display='none';
-   $('profilePage').style.display='none'; // This hides the profile page on logout
+   $('profilePage').style.display='none';
+   $('userBar').innerHTML='';
  }
 });
 });
