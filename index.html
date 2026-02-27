@@ -15,15 +15,27 @@
 }
 :root{--bg1:#0f172a;--bg2:#1e293b;--card:#111827;--accent:#22d3ee;--text:#e5e7eb;--muted:#94a3b8;--input:#1f2937}
 body.light{--bg1:#e0f2fe;--bg2:#f8fafc;--card:#ffffff;--accent:#0284c7;--text:#0f172a;--muted:#64748b;--input:#e2e8f0}
-body{margin:0;font-family:system-ui;background:linear-gradient(135deg,var(--bg1),var(--bg2));color:var(--text);display:flex;justify-content:center;align-items:center;height:100vh;transition:.3s}
+body{margin:0;font-family:system-ui;background:linear-gradient(135deg,var(--bg1),var(--bg2));color:var(--text);display:flex;justify-content:center;align-items:center;height:100vh;transition:.3s;overflow:hidden}
 .card{width:100%;max-width:100%;height:100dvh;background:var(--card);border-radius:0px;display:flex;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4)}
 .sidebar{width:186px;padding:12px;border-right:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px}
-.main{flex:1;display:flex;flex-direction:column;padding:16px}
+.main{flex:1;display:flex;flex-direction:column;padding:16px;overflow:hidden}
 header{display:flex;align-items:center;font-weight:bold;color:var(--accent);font-size:18px;margin-bottom:6px}
 #profileInfo{flex:1;text-align:center;font-size:16px;color:var(--text)}
 .themeBtn{background:transparent;border:2px solid var(--accent);color:var(--accent);padding:6px 10px;border-radius:10px;cursor:pointer}
-#messages{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:10px}
-.msg{max-width:68%;padding:10px;border-radius:16px;font-size:16px}
+
+/* HIDE SCROLLBARS BUT ALLOW SCROLLING */
+#messages, .userBar, .dropdown {
+  flex:1;
+  overflow-y:auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+#messages::-webkit-scrollbar, .userBar::-webkit-scrollbar, .dropdown::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+#messages{display:flex;flex-direction:column;gap:10px;max-height: 100%;}
+.msg{max-width:68%;padding:10px;border-radius:16px;font-size:16px;word-wrap: break-word;}
 .me{background:var(--accent);color:#001018;align-self:flex-end}
 .other{background:var(--input)}
 .system{align-self:center;color:var(--muted);font-size:16px}
@@ -32,10 +44,10 @@ input,button{padding:12px;border-radius:14px;border:none;font-size:14px}
 input{flex:1;background:var(--input);color:var(--text)}
 button{background:var(--accent);font-weight:bold;cursor:pointer}
 .authBox{margin:auto;width:320px;display:flex;flex-direction:column;gap:8px}
-.dropdown{position:absolute;background:var(--card);border-radius:10px;max-height:150px;overflow-y:auto;display:none;width:220px;z-index:5}
+.dropdown{position:absolute;background:var(--card);border-radius:10px;max-height:150px;width:220px;z-index:1001;top:100px}
 .dropdown div{padding:8px;border-bottom:1px solid rgba(255,255,255,.08);cursor:pointer}
 .dropdown div:hover{background:var(--accent);color:#001018}
-.userBar{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
+.userBar{display:flex;flex-direction:column;gap:6px}
 .userItem{cursor:pointer;padding:8px;border-radius:8px;background:var(--input)}
 .userItem:hover{background:var(--accent);color:#001018}
 .profilePage{display:none;flex-direction:column;gap:8px}
@@ -61,7 +73,7 @@ button{background:var(--accent);font-weight:bold;cursor:pointer}
 <button id="loginBtn">Login</button>
 </div>
 
-<div id="chatSection" style="display:none;flex:1;flex-direction:column">
+<div id="chatSection" style="display:none;flex:1;flex-direction:column;overflow:hidden">
 <header>
 <span>🐦 BIRDSEYE</span>
 <span id="profileInfo"></span>
@@ -97,8 +109,6 @@ const $=id=>document.getElementById(id);
 let currentUser=null,currentRoom=null,unsubscribe=null;
 
 function fakeEmail(u){return u+"@birdseye.app"}
-
-// This ensures UserA_UserB is the same ID for both people
 function getRoomId(a, b) { return a < b ? a + "_" + b : b + "_" + a; }
 
 $('themeToggle').onclick=()=>document.body.classList.toggle('light');
@@ -129,7 +139,6 @@ $('globalRoomBtn').onclick=()=>{
   $('sidebar').classList.remove('active');
 };
 
-// Profile Navigation logic preserved
 $('openProfile').onclick=()=>{ $('chatSection').style.display='none'; $('profilePage').style.display='flex'; };
 $('backToChat').onclick=()=>{ $('profilePage').style.display='none'; $('chatSection').style.display='flex'; };
 
@@ -138,7 +147,6 @@ function openGlobal(){currentRoom='global';listenRoom();}
 async function openPrivate(o){
   if(!currentUser || currentUser === o) return; 
   currentRoom=getRoomId(currentUser,o);
-  // Important: Save the room participants so it appears for the other person
   await db.collection('rooms').doc(currentRoom).set({ participants: [currentUser, o] }, {merge: true});
   listenRoom();
   addRoomToSidebar(o);
@@ -159,7 +167,9 @@ function listenRoom(){
      div.innerHTML=`<b>@${m.from}</b><br>${m.text||''}`;
      $('messages').appendChild(div);
    });
-   $('messages').scrollTop=$('messages').scrollHeight;
+   setTimeout(() => {
+     $('messages').scrollTop = $('messages').scrollHeight;
+   }, 50);
  });
 }
 
@@ -213,7 +223,6 @@ auth.onAuthStateChanged(async user=>{
      $('profileDisplayName').innerText=d.displayName||'';
    }
    
-   // Sync sidebar rooms automatically based on database participants
    db.collection('rooms').where('participants', 'array-contains', currentUser)
      .onSnapshot(snap => {
         snap.forEach(doc => {
@@ -226,7 +235,6 @@ auth.onAuthStateChanged(async user=>{
      });
    openGlobal();
  }else{
-   // Proper cleanup on logout
    currentUser=null;
    if(unsubscribe)unsubscribe();
    $('authSection').style.display='flex';
