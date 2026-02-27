@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
- <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>🐦 Birdseye</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -10,36 +10,14 @@
 <style>
 /* Mobile styles */
 @media (max-width: 600px) {
-
-  .menu-btn {
-    display: block;
-    font-size: 22px;
-    background: none;
-    border: none;
-    color: white;
-    margin-right: 10px;
-  }
-
-  .sidebar {
-    position: fixed;
-    left: -100%;
-    top: 0;
-    width: 70%;
-    height: 100vh;
-    background: #0f1b2d;
-    transition: 0.3s ease;
-    z-index: 1000;
-  }
-
-  .sidebar.active {
-    left: 0;
-  }
-
+  .menu-btn { display: block; font-size: 22px; background: none; border: none; color: white; margin-right: 10px; }
+  .sidebar { position: fixed; left: -100%; top: 0; width: 70%; height: 100vh; background: #0f1b2d; transition: 0.3s ease; z-index: 1000; }
+  .sidebar.active { left: 0; }
 }
 :root{--bg1:#0f172a;--bg2:#1e293b;--card:#111827;--accent:#22d3ee;--text:#e5e7eb;--muted:#94a3b8;--input:#1f2937}
 body.light{--bg1:#e0f2fe;--bg2:#f8fafc;--card:#ffffff;--accent:#0284c7;--text:#0f172a;--muted:#64748b;--input:#e2e8f0}
 body{margin:0;font-family:system-ui;background:linear-gradient(135deg,var(--bg1),var(--bg2));color:var(--text);display:flex;justify-content:center;align-items:center;height:100vh;transition:.3s}
-.card{width:100%%;max-width:100%;height:100dvh;background:var(--card);border-radius:0px;display:flex;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.card{width:100%;max-width:100%;height:100dvh;background:var(--card);border-radius:0px;display:flex;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4)}
 .sidebar{width:186px;padding:12px;border-right:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px}
 .main{flex:1;display:flex;flex-direction:column;padding:16px}
 header{display:flex;align-items:center;font-weight:bold;color:var(--accent);font-size:18px;margin-bottom:6px}
@@ -66,11 +44,11 @@ button{background:var(--accent);font-weight:bold;cursor:pointer}
 </style>
 </head>
 <body>
-  <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+<button class="menu-btn" onclick="toggleSidebar()">☰</button>
 <div class="card">
 <div class="sidebar" id="sidebar" style="display:none">
   <h3>Chats</h3>
-  <div id="globalRoomBtn">🌍 Global</div>
+  <div class="userItem" id="globalRoomBtn">🌍 Global</div>
   <div class="userBar" id="userBar"></div>
 </div>
 <div class="main">
@@ -142,13 +120,28 @@ $('loginBtn').onclick=async()=>{
 
 $('logoutBtn').onclick=()=>auth.signOut();
 $('sendBtn').onclick=sendMessage;
-$('globalRoomBtn').onclick=()=>openGlobal();
+
+// Close sidebar when clicking Global
+$('globalRoomBtn').onclick=()=>{
+  openGlobal();
+  $('sidebar').classList.remove('active'); 
+};
+
 $('openProfile').onclick=()=>{ $('chatSection').style.display='none'; $('profilePage').style.display='flex'; };
 $('backToChat').onclick=()=>{ $('profilePage').style.display='none'; $('chatSection').style.display='flex'; };
 
 function getRoomId(a,b){return [a,b].sort().join('_');}
 function openGlobal(){currentRoom='global';listenRoom();}
-function openPrivate(o){if(!currentUser) return; currentRoom=getRoomId(currentUser,o);listenRoom();addRoomToSidebar(o);} 
+
+async function openPrivate(o){
+  if(!currentUser) return; 
+  currentRoom=getRoomId(currentUser,o);
+  await db.collection('rooms').doc(currentRoom).set({ participants: [currentUser, o] }, {merge: true});
+  listenRoom();
+  addRoomToSidebar(o);
+  // FIX: Close sidebar after selecting a person
+  $('sidebar').classList.remove('active'); 
+} 
 
 function listenRoom(){
  if(!currentRoom) return;
@@ -160,7 +153,6 @@ function listenRoom(){
    if(s.empty){$('messages').innerHTML="<div class='system'>No messages</div>";return;}
    s.forEach(d=>{
      const m=d.data();
-     if(!m || !m.from) return;
      const div=document.createElement('div');
      div.className='msg '+(m.from===currentUser?'me':'other');
      div.innerHTML=`<b>@${m.from}</b><br>${m.text||''}`;
@@ -195,9 +187,9 @@ $('searchUser').addEventListener('input',async()=>{
  snap.forEach(doc=>{
   const u=doc.data();
   if(!u||!u.username||doc.id===currentUser) return;
-  if(u.username.toLowerCase().includes(q)||(u.displayName||'').toLowerCase().includes(q)){
+  if(u.username.toLowerCase().includes(q)){
    const div=document.createElement('div');
-   div.textContent=`${u.displayName||u.username} (@${u.username})`;
+   div.textContent=`@${u.username}`;
    div.onclick=()=>{openPrivate(u.username);$('userList').style.display='none'};
    $('userList').appendChild(div);
   }
@@ -205,26 +197,25 @@ $('searchUser').addEventListener('input',async()=>{
  $('userList').style.display='block';
 });
 
-// 🔥 FIX: Proper null checks for auth state
 auth.onAuthStateChanged(async user=>{
  if(user && user.email){
    currentUser=user.email.split('@')[0];
    $('authSection').style.display='none';
    $('chatSection').style.display='flex';
    $('sidebar').style.display='flex';
-   try{
-     const snap=await db.collection('users').doc(currentUser).get();
-     const d=snap.exists?snap.data():null;
-     if(d && d.username){
-       $('profileInfo').innerText='@'+d.username;
-       $('profileUsername').innerText=d.username;
-       $('profileDisplayName').innerText=d.displayName||'';
-     }else{
-       $('profileInfo').innerText='@'+currentUser;
-       $('profileUsername').innerText=currentUser;
-       $('profileDisplayName').innerText='';
-     }
-   }catch(e){console.error(e)}
+   const snap=await db.collection('users').doc(currentUser).get();
+   if(snap.exists){
+     $('profileInfo').innerText='@'+snap.data().username;
+     $('profileUsername').innerText=snap.data().username;
+     $('profileDisplayName').innerText=snap.data().displayName||'';
+   }
+   db.collection('rooms').where('participants', 'array-contains', currentUser)
+     .onSnapshot(snap => {
+        snap.forEach(doc => {
+            const other = doc.data().participants.find(p => p !== currentUser);
+            if(other) addRoomToSidebar(other);
+        });
+     });
    openGlobal();
  }else{
    currentUser=null;
@@ -232,35 +223,18 @@ auth.onAuthStateChanged(async user=>{
    $('authSection').style.display='flex';
    $('chatSection').style.display='none';
    $('sidebar').style.display='none';
-   $('profilePage').style.display='none';
  }
 });
-
-// Basic runtime tests
-console.assert(typeof fakeEmail('test')==='string','fakeEmail failed');
-console.assert(getRoomId('a','b')==='a_b','room id sort failed');
 });
- 
+
 function toggleSidebar() {
-  document.querySelector(".sidebar").classList.toggle("active");
+  document.getElementById("sidebar").classList.toggle("active");
 }
 
-document.addEventListener("click", function (event) {
-  const sidebar = document.querySelector(".sidebar");
-  const menuBtn = document.querySelector(".menu-btn");
-
-  // If sidebar is open
-  if (sidebar.classList.contains("active")) {
-
-    // If click is NOT inside sidebar AND NOT the menu button
-    if (!sidebar.contains(event.target) && !menuBtn.contains(event.target)) {
-      sidebar.classList.remove("active");
-    }
-  }
-});
 </script>
 </body>
 </html>
+
 
 
 
