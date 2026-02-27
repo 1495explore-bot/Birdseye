@@ -8,7 +8,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
-/* Mobile styles */
 @media (max-width: 600px) {
   .menu-btn { display: block; font-size: 22px; background: none; border: none; color: white; margin-right: 10px; }
   .sidebar { position: fixed; left: -100%; top: 0; width: 70%; height: 100vh; background: #0f1b2d; transition: 0.3s ease; z-index: 1000; }
@@ -120,13 +119,7 @@ $('loginBtn').onclick=async()=>{
 
 $('logoutBtn').onclick=()=>auth.signOut();
 $('sendBtn').onclick=sendMessage;
-
-// Close sidebar when clicking Global
-$('globalRoomBtn').onclick=()=>{
-  openGlobal();
-  $('sidebar').classList.remove('active'); 
-};
-
+$('globalRoomBtn').onclick=()=>{ openGlobal(); $('sidebar').classList.remove('active'); };
 $('openProfile').onclick=()=>{ $('chatSection').style.display='none'; $('profilePage').style.display='flex'; };
 $('backToChat').onclick=()=>{ $('profilePage').style.display='none'; $('chatSection').style.display='flex'; };
 
@@ -139,7 +132,6 @@ async function openPrivate(o){
   await db.collection('rooms').doc(currentRoom).set({ participants: [currentUser, o] }, {merge: true});
   listenRoom();
   addRoomToSidebar(o);
-  // FIX: Close sidebar after selecting a person
   $('sidebar').classList.remove('active'); 
 } 
 
@@ -150,7 +142,6 @@ function listenRoom(){
  unsubscribe=db.collection('rooms').doc(currentRoom).collection('messages').orderBy('time')
  .onSnapshot(s=>{
    $('messages').innerHTML='';
-   if(s.empty){$('messages').innerHTML="<div class='system'>No messages</div>";return;}
    s.forEach(d=>{
      const m=d.data();
      const div=document.createElement('div');
@@ -163,7 +154,7 @@ function listenRoom(){
 }
 
 function sendMessage(){
- if(!currentUser||!currentRoom) return alert("No active chat");
+ if(!currentUser||!currentRoom) return;
  const t=$('msgInput').value.trim();
  if(!t) return;
  db.collection('rooms').doc(currentRoom).collection('messages').add({text:t,from:currentUser,time:Date.now()});
@@ -186,7 +177,7 @@ $('searchUser').addEventListener('input',async()=>{
  $('userList').innerHTML='';
  snap.forEach(doc=>{
   const u=doc.data();
-  if(!u||!u.username||doc.id===currentUser) return;
+  if(!u||u.username===currentUser) return;
   if(u.username.toLowerCase().includes(q)){
    const div=document.createElement('div');
    div.textContent=`@${u.username}`;
@@ -205,9 +196,10 @@ auth.onAuthStateChanged(async user=>{
    $('sidebar').style.display='flex';
    const snap=await db.collection('users').doc(currentUser).get();
    if(snap.exists){
-     $('profileInfo').innerText='@'+snap.data().username;
-     $('profileUsername').innerText=snap.data().username;
-     $('profileDisplayName').innerText=snap.data().displayName||'';
+     const d=snap.data();
+     $('profileInfo').innerText='@'+d.username;
+     $('profileUsername').innerText=d.username;
+     $('profileDisplayName').innerText=d.displayName||'';
    }
    db.collection('rooms').where('participants', 'array-contains', currentUser)
      .onSnapshot(snap => {
@@ -218,11 +210,13 @@ auth.onAuthStateChanged(async user=>{
      });
    openGlobal();
  }else{
+   // LOGOUT RESET: This hides everything and shows the login box
    currentUser=null;
    if(unsubscribe)unsubscribe();
    $('authSection').style.display='flex';
    $('chatSection').style.display='none';
    $('sidebar').style.display='none';
+   $('profilePage').style.display='none'; // This hides the profile page on logout
  }
 });
 });
@@ -230,13 +224,6 @@ auth.onAuthStateChanged(async user=>{
 function toggleSidebar() {
   document.getElementById("sidebar").classList.toggle("active");
 }
-
 </script>
 </body>
 </html>
-
-
-
-
-
-
